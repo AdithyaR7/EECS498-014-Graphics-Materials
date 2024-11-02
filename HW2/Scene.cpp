@@ -14,9 +14,58 @@ Vec3 Scene::trace(const Ray &ray, int bouncesLeft, bool discardEmission) {
     if (bouncesLeft < 0) return {};
 
     // TODO...
+    Intersection inter = getIntersection(ray);              //get intersection using helper function
+
+    if(inter.happened){                                     //If ray intersects object:
     
-    return {};
+        //8.1.1 - Indirect Radiance. First Ray, sampled randomly. Use Trace recursively, discardEmission if True.
+        Vec3 Lo = Vec3();                                   //initialize direct radiance to 0. Stays 0 if discardEmission=True (8.1.1)
+        
+        if((discardEmission == false) || (bouncesLeft==0)){ 
+            Lo = Lo + inter.object->ke;                     //return value. Term outside the integral/sampling
+        }
+
+        //first 'sampled' ray
+        Ray next_ray = Ray(inter.pos, Random::cosWeightedHemisphere(inter.getNormal()));     //get sampled ray direction. importane sampling 
+        Intersection inter_sampled = getIntersection(next_ray);
+
+        //terms to calculate indirect lighting
+        Vec3 fr = inter.calcBRDF(-next_ray.dir, -ray.dir);                                       //BRDF value
+        float cosine_term = next_ray.dir.dot(inter.getNormal());                                 
+        
+        if(inter_sampled.happened){
+            Vec3 Li = Vec3();                                                //Li is 0 vector if no bounces left. Base case
+            float pdf = cosine_term/(PI);                                    //=1.0/(2*PI) for global ill
+            if(bouncesLeft > 0){
+                Li = trace(next_ray, bouncesLeft-1, true);                   //recursive call. bool set to true to discardEmission (8.1.1)
+            }
+            Lo = Lo + Li * fr * (cosine_term / pdf);                      //Li = emission of intersection point if intersects
+        }
+
+        //8.1.2 - Direct Radiance
+        Intersection lightSample = sampleLight();
+        Vec3 lightDir = lightSample.pos - inter.pos;
+        float distanceToLight = lightDir.getLength();
+        lightDir.normalize();
+        Ray rayToLight(inter.pos, lightDir);        //set up shadow ray
+        
+        Intersection light_inter = getIntersection(rayToLight);     //check intersections and obstacles to light
+
+        if(light_inter.happened && light_inter.object->hasEmission){       
+            float pdfLightSample = 1.0 / lightArea;
+            Vec3 light_emission = lightSample.object->ke;
+            Vec3 fr_light = inter.calcBRDF(-rayToLight.dir, -ray.dir);
+            float cos_term1 = rayToLight.dir.dot(inter.getNormal());
+            float d_squared = distanceToLight * distanceToLight;
+            float cos_term2 = rayToLight.dir.dot(-light_inter.getNormal()) / d_squared;
+            Lo = Lo + light_emission*fr_light*(cos_term1*cos_term2 / pdfLightSample);
+        }
+        return Lo;
+    }
+
+    return {};                                      //deduces return type, default constructs object (zero vector; Vec3())
 }
+
 
 tinyobj::ObjReader Scene::reader {};
 
