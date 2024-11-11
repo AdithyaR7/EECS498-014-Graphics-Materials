@@ -143,14 +143,14 @@ def main():
     nerf.load_state_dict(ckpt)
     test_img_idx_list = [0, 40, 85]
     with torch.no_grad():
-        test_img_idx = test_img_idx_list[-1]
+        test_img_idx = test_img_idx_list[-2]                         #CHANGED TO SEE PERFORMANCE AFTER PT4 !!!!
         rays_o, rays_d = get_rays(H, W, focal, poses[test_img_idx])
         #############################################################################
         #                                   TODO: Task 4                            #
         #############################################################################
         # Render the scene using the current model state. You may want to use near = 2, far = 6, n_samples = 64 
         
-        # rgb, depth = ..., 
+        rgb, depth = render(nerf, rays_o, rays_d, near=2, far=6, n_samples=64)
 
         #############################################################################
         #                             END OF YOUR CODE                              #
