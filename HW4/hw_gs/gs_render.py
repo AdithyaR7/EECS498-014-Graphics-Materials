@@ -67,6 +67,18 @@ def build_rotation(r):
     # Here, we already help you initialize the Rotation Matrix to be (3x3) all zero matrix
     R = torch.zeros((q.size(0), 3, 3), device="cuda")
 
+    # from https://www.songho.ca/opengl/gl_quaternion.html
+    R[:, 0, 0] = 1 - 2*y*y - 2*z*z
+    R[:, 0, 1] = 2*x*y - 2*r*z
+    R[:, 0, 2] = 2*x*z + 2*r*y
+
+    R[:, 1, 0] = 2*x*y + 2*r*z
+    R[:, 1, 1] = 1 - 2*x*x - 2*z*z
+    R[:, 1, 2] = 2*y*z - 2*r*x
+
+    R[:, 2, 0] = 2*x*z - 2*r*y
+    R[:, 2, 1] = 2*y*z + 2*r*x
+    R[:, 2, 2] = 1 - 2*x*x - 2*y*y
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
@@ -95,7 +107,9 @@ def build_scaling_rotation(scaling_vector, quaternion_vector):
     # Get the scaling matrix from the scaling vector
     # Hint: Check Formula 3 in the isntruction pdf
 
-    # S = ...
+    S[:, 0, 0] = scaling_vector[:, 0]
+    S[:, 1, 1] = scaling_vector[:, 1]
+    S[:, 2, 2] = scaling_vector[:, 2]
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
@@ -169,7 +183,7 @@ def build_covariance_2d(mean3d, cov3d, viewmatrix, fov_x, fov_y, focal_x, focal_
     # Calculate the 2D covariance matrix cov2d
     # Hint: Check Args explaination for cov3d; For clean code of matrix multiplication, consider using @
 
-    # cov2d = ...
+    cov2d = J @ W @ cov3d @ W.T @ J.T       #eq 4
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
