@@ -289,8 +289,8 @@ class GaussRenderer(nn.Module):
 
                 top_l_G_x, top_l_G_y = rect[0][:, 0], rect[0][:, 1]
                 bottom_r_G_x, bottom_r_G_y = rect[1][:, 0], rect[1][:, 1] #--> x, y
-                top_l_tile_x, top_l_tile_y = h, w
-                bottom_r_tile_x, bottom_r_tile_y = (h + TILE_SIZE), (w + TILE_SIZE)
+                top_l_tile_x, top_l_tile_y = w, h
+                bottom_r_tile_x, bottom_r_tile_y = (w + TILE_SIZE), (h + TILE_SIZE)
                 
                 in_mask = ((bottom_r_G_x >= top_l_tile_x) & (top_l_G_x <= bottom_r_tile_x) & (bottom_r_G_y >= top_l_tile_y) & (top_l_G_y <= bottom_r_tile_y))
                 #############################################################################
@@ -334,7 +334,6 @@ class GaussRenderer(nn.Module):
                 # acc_alpha =  ... # Hint: Check Eq. (8) in the instruction pdf
                 acc_alpha = torch.sum(alpha * T, dim=1)  #sum over P
 
-                # breakpoint()
                 # tile_color = ... # Hint: Check Eq. (5) in the instruction pdf
                 tile_color = torch.sum(T * alpha * sorted_color.unsqueeze(0), dim=1) + (1 - acc_alpha)      #background color 1
                 
