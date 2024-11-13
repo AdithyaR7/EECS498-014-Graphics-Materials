@@ -183,7 +183,7 @@ def build_covariance_2d(mean3d, cov3d, viewmatrix, fov_x, fov_y, focal_x, focal_
     # Calculate the 2D covariance matrix cov2d
     # Hint: Check Args explaination for cov3d; For clean code of matrix multiplication, consider using @
 
-    cov2d = J @ W @ cov3d @ W.T @ J.T       #eq 4
+    cov2d = J @ W @ cov3d @ W.T @ J.transpose(1,2)      #eq 4
     #############################################################################
     #                             END OF YOUR CODE                              #
     #############################################################################
@@ -287,7 +287,12 @@ class GaussRenderer(nn.Module):
                 # check if the 2D gaussian intersects with the tile 
                 # To do so, we need to check if the rectangle of the 2D gaussian (rect) intersects with the tile
 
-                # in_mask = .....
+                top_l_G_x, top_l_G_y = rect[0][:, 0], rect[0][:, 1]
+                bottom_r_G_x, bottom_r_G_y = rect[1][:, 0], rect[1][:, 1] #--> x, y
+                top_l_tile_x, top_l_tile_y = h, w
+                bottom_r_tile_x, bottom_r_tile_y = (h + TILE_SIZE), (w + TILE_SIZE)
+                
+                in_mask = ((bottom_r_G_x >= top_l_tile_x) & (top_l_G_x <= bottom_r_tile_x) & (bottom_r_G_y >= top_l_tile_y) & (top_l_G_y <= bottom_r_tile_y))
                 #############################################################################
                 #                             END OF YOUR CODE                              #
                 #############################################################################
@@ -313,18 +318,28 @@ class GaussRenderer(nn.Module):
                 #  In this block, you are expcted to implemente the splatting process in one tile.
                 # You are expected to output `acc_alpha`, `tile_color`, and `tile_depth` which are the accumulated alpha, color, and depth in the tile.
                 # To achieve it, you may want to follow the following logic:
-                # Step 1: calculate the gaussian weights given `dx` and `sorted_inverse_conv`, which are the weights of each gaussian in the tile applying on each pixel. It follows the normal gaussian distribution formula.
+                # Step 1: calculate the gaussian weights given `dx` and `sorted_inverse_conv`, which are the weights of each gaussian in the tile applying on each pixel. 
+                # It follows the normal gaussian distribution formula.
                 # It should have the shape [B, P], where B is the number of pixels in the tile, and P is the number of gaussians in the tile.
                 # Step 2: calculate alpha. alpha = (gauss_weight[..., None] * sorted_opacity[None]).clip(max=0.99)
                 # Step 3: calculate the accumulated alpha, color and depth.
 
                 # gauss_weight = ... # Hint: Check step 1 in the instruction pdf
+                gauss_weight = torch.exp(-0.5 *  dx.unsqueeze(-1).transpose(-2,-1) @ sorted_inverse_conv.unsqueeze(0) @ dx.unsqueeze(-1)).squeeze(-2,-1)
                 # alpha = ... # Hint: Check step 2 in the instruction pdf
+                alpha = (gauss_weight[..., None] * sorted_opacity[None]).clip(max=0.99)
                 # T = ... # Hint: Check Eq. (6) in the instruction pdf
+                T = torch.cumprod(1 - alpha, dim=1)     
 
                 # acc_alpha =  ... # Hint: Check Eq. (8) in the instruction pdf
+                acc_alpha = torch.sum(alpha * T, dim=1)  #sum over P
+
+                # breakpoint()
                 # tile_color = ... # Hint: Check Eq. (5) in the instruction pdf
+                tile_color = torch.sum(T * alpha * sorted_color.unsqueeze(0), dim=1) + (1 - acc_alpha)      #background color 1
+                
                 # tile_depth = ... # Hint: Check Eq. (7) in the instruction pdf
+                tile_depth = torch.sum(T * alpha * sorted_depths.unsqueeze(0).unsqueeze(-1) , dim=1)
                 #############################################################################
                 #                             END OF YOUR CODE                              #
                 #############################################################################
