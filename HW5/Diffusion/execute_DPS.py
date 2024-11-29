@@ -66,7 +66,7 @@ if __name__ == "__main__":
 
         # Execute the inference of the model
         # TODO: Change your num_inference_steps here
-        image = pipeline(num_inference_steps = 1000, use_DPS = True, operator = operator, mask = mask, measurement = y_n)     # Note: the default inference step is 1000 for DDPM and 50 for DDIM (No need to input new value inside)
+        image = pipeline(num_inference_steps = 400, use_DPS = True, operator = operator, mask = mask, measurement = y_n)     # Note: the default inference step is 1000 for DDPM and 50 for DDIM (No need to input new value inside)
 
 
         # Save image

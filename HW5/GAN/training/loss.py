@@ -81,7 +81,7 @@ class StyleGAN2Loss(Loss):
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
 
                 # TODO #1: Write the loss function for the Generator (formula (1)) (gen_logits is equivalent to D(G(z)))
-                loss_Gmain = None
+                loss_Gmain = torch.nn.functional.softplus(-gen_logits)                      #log(1 + exp(u)) = softplus
                 ################################################ Solution ################################################
 
 
@@ -117,7 +117,7 @@ class StyleGAN2Loss(Loss):
                 training_stats.report('Loss/signs/fake', gen_logits.sign())
 
                 # TODO #2: Write the Loss function for the second term of the Discriminator (formula (2)) (gen_logits is equivalent to D(G(z))) 
-                loss_Dgen = None
+                loss_Dgen = torch.nn.functional.softplus(gen_logits)  #only second term?
 
                 ################################################ Solution ################################################
 
@@ -132,7 +132,7 @@ class StyleGAN2Loss(Loss):
                 
                 # TODO #3: Which variable should be taken as the input for the first term of the Discriminator loss: Real or Gen ones?
                 #           real_img for Real; gen_img for Gen
-                correct_input_to_discriminator_in_discriminator_loss = None
+                correct_input_to_discriminator_in_discriminator_loss = real_img         #for first term of D loss
 
                 ################################################ Solution ################################################
 
@@ -145,7 +145,7 @@ class StyleGAN2Loss(Loss):
                 loss_Dreal = 0
                 if do_Dmain:
                     # TODO #4: Write the Loss function for the first term of the Discriminator Loss (formula (2)) (real_logits is equivalent to D(x)) 
-                    loss_Dreal = None
+                    loss_Dreal = torch.nn.functional.softplus(-real_logits)     
 
                     ################################################ Solution ################################################
                     
@@ -160,7 +160,8 @@ class StyleGAN2Loss(Loss):
                     # TODO #5: Implement the R1 regularization term.
                     # Note1: r1_grads is gradient to the discriminator; gamma term is the self.r1_gamma
                     # Note2: Expection term is to calculate the sum across all dimension except the batch dimension (the first dimension)
-                    loss_Dr1 = None       # This the is the final R1 regulatization value
+                    r1_grads_reshaped = r1_grads.reshape( r1_grads.shape[0], -1 )  #so that it can be summed over all dims (now 1) except batch (dim=0)
+                    loss_Dr1 = (self.r1_gamma / 2) * (r1_grads_reshaped **2).sum(dim=1)   # This the is the final R1 regulatization value
 
                     ##################################################################################################################################
 
