@@ -1,7 +1,7 @@
 *.parquet
 *.pyc
 training-runs/*
-# *.zip
+*.zip
 *.json
 *.jsonl
 .vscode/launch.json
